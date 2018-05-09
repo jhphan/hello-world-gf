@@ -1,0 +1,15 @@
+%YAML 1.1
+---
+gfVersion: v1.0
+class: app
+
+name: app-template-0.1-gf
+description: App Template
+type: shell
+inputs:
+  file: input1.txt
+parameters:
+  output: output.txt
+definition:
+  script: app-template-0.1-gf.sh
+...

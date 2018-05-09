@@ -1,0 +1,41 @@
+{
+  "name": "{{ agave.appsPrefix }}-app-template-0.1-gf",
+  "version": "{{ version }}",
+  "label": "App Template",
+  "defaultNodeCount": 1,
+  "defaultMemoryPerNode": 1,
+  "defaultProcessorsPerNode": 1,
+  "executionType": "HPC",
+  "parallelism": "SERIAL",
+  "checkpointable": false,
+  "executionSystem": "{{ agave.executionSystem }}",
+  "deploymentPath": "{{ agave.appsDir }}/app-template-0.1-gf-{{ version }}",
+  "deploymentSystem": "{{ agave.deploymentSystem }}",
+  "templatePath": "app-template-0.1-gf.sh",
+  "testPath": "test/test.sh",
+  "inputs": [
+    {
+      "id": "file",
+      "details": {
+        "label": "Input file"
+      },
+      "value": {
+        "default": "",
+        "required": true
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "id": "output",
+      "details": {
+        "label": "Output file"
+      },
+      "value": {
+        "default": "output.txt",
+        "required": true,
+        "type": "string"
+      }
+    }
+  ]
+}
