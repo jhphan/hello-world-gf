@@ -1,19 +1,22 @@
 #!/bin/bash
 
-# template for GeneFlow app wrapper script
+# Template for GeneFlow App wrapper scripts
 
 
+###############################################################################
 #### Helper Functions ####
+###############################################################################
 
-## *** Modify usage function with app-specific options
-
+## ****************************************************************************
+## Modify usage function with app-specific options
 usage () {
     echo "Usage: $(basename $0) [-h] -f file -o output [-x execenv]"
-    echo "  -f,--file       Input file"
-    echo "  -o,--output     Output file"
-    echo "  -x,--execenv    Execution environment (package, docker, singularity)"
-    echo "  -h,--help       Display this help message"
+    echo "  -f,--file     Input file"
+    echo "  -o,--output   Output file"
+    echo "  -x,--execenv  Execution environment (package, docker, singularity)"
+    echo "  -h,--help     Display this help message"
 }
+## ****************************************************************************
 
 safeRunCommand() {
     cmd="$@"
@@ -35,10 +38,9 @@ reportExit() {
 trap "reportExit" EXIT
 
 
-
+###############################################################################
 #### Parse Command-Line Arguments ####
-
-## *** Modify command line options to match app definition
+###############################################################################
 
 getopt --test > /dev/null
 if [[ $? -ne 4 ]]; then
@@ -46,8 +48,11 @@ if [[ $? -ne 4 ]]; then
     exit 1
 fi
 
+## ****************************************************************************
+## *** Modify command line options to match app definition
 OPTIONS=hf:o:x:
 LONGOPTIONS=help,file:,output:,execenv:
+## ****************************************************************************
 
 # -temporarily store output to be able to check for errors
 # -e.g. use "--options" parameter by name to activate quoting/enhanced mode
@@ -65,7 +70,8 @@ fi
 # read getopt's output this way to handle the quoting right:
 eval set -- "$PARSED"
 
-# now process options in order until we see --
+## ****************************************************************************
+## *** Modify command line options to match app definition
 while true; do
     case "$1" in
         -h|--help)
@@ -107,19 +113,17 @@ while true; do
             ;;
     esac
 done
+## ****************************************************************************
 
-
-
+## ****************************************************************************
 #### Log Any Variables Passed as Inputs ####
-
 echo "File: ${FILE}"
 echo "Output: ${OUTPUT}"
+## ****************************************************************************
 
+#### Check and Set Required Variables ####
 
-
-#### Check and Set Required Vars ####
-
-## *** Add app-specific logic for handling 
+## *** Add app-specific logic for handling
 ## *** and parsing inputs and parameters
 
 ## FILE
@@ -155,17 +159,16 @@ if [ -z "${OUTPUT}" ]; then
     exit 1
 fi
 
+
+
+
 ## EXECENV
 if [ -z "${EXECENV}" ]; then
     # default execution environment is package
     EXECENV=package # other options=docker,singularity
 fi
 
-
-#### Construct App Command ####
-
-## *** Add app-specific logic for execution of the app binaries
-
+## SCRIPT_DIR: directory of current script, set depending on exec env
 if [ -z "${AGAVE_JOB_ID}" ]; then
     # not an agave job
     SCRIPT_DIR=$(dirname $(readlink -f $0))
@@ -173,6 +176,13 @@ else
     echo "Agave Job Detected"
     SCRIPT_DIR=$(pwd)
 fi
+
+
+
+
+#### Construct App Command ####
+
+## *** Add app-specific logic for execution of the app binaries
 
 case "${EXECENV}" in
     package)
