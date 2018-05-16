@@ -3,12 +3,13 @@
 # Template for GeneFlow App wrapper scripts
 
 
+
 ###############################################################################
 #### Helper Functions ####
 ###############################################################################
 
-## ****************************************************************************
-## Modify usage function with app-specific options
+## MODIFY >>> *****************************************************************
+## Usage description should match command line arguments defined below
 usage () {
     echo "Usage: $(basename $0) [-h] -f file -o output [-x execenv]"
     echo "  -f,--file     Input file"
@@ -16,8 +17,9 @@ usage () {
     echo "  -x,--execenv  Execution environment (package, docker, singularity)"
     echo "  -h,--help     Display this help message"
 }
-## ****************************************************************************
+## ***************************************************************** <<< MODIFY
 
+# report error code for command
 safeRunCommand() {
     cmd="$@"
     eval $cmd
@@ -38,6 +40,7 @@ reportExit() {
 trap "reportExit" EXIT
 
 
+
 ###############################################################################
 #### Parse Command-Line Arguments ####
 ###############################################################################
@@ -48,11 +51,11 @@ if [[ $? -ne 4 ]]; then
     exit 1
 fi
 
-## ****************************************************************************
-## *** Modify command line options to match app definition
+## MODIFY >>> *****************************************************************
+## Command line options should match usage description
 OPTIONS=hf:o:x:
 LONGOPTIONS=help,file:,output:,execenv:
-## ****************************************************************************
+## ***************************************************************** <<< MODIFY
 
 # -temporarily store output to be able to check for errors
 # -e.g. use "--options" parameter by name to activate quoting/enhanced mode
@@ -70,8 +73,17 @@ fi
 # read getopt's output this way to handle the quoting right:
 eval set -- "$PARSED"
 
-## ****************************************************************************
-## *** Modify command line options to match app definition
+## MODIFY >>> *****************************************************************
+## Set any defaults for command line options
+EXEC_METHOD=cdc-module
+## ***************************************************************** <<< MODIFY
+
+## MODIFY >>> *****************************************************************
+## Handle each command line option. Lower-case variables, e.g., ${file}, only
+## exist if they are set as environment variables before script execution.
+## Environment variables are used by Agave. If the environment variable is not
+## set, the Upper-case variable, e.g., ${FILE}, is assigned from the command
+## line parameter.
 while true; do
     case "$1" in
         -h|--help)
@@ -94,11 +106,11 @@ while true; do
             fi
             shift 2
             ;;
-        -x|--execenv)
-            if [ -z "${execenv}" ]; then
-                EXECENV=$2
+        -x|--exec_method)
+            if [ -z "${exec_method}" ]; then
+                EXEC_METHOD=$2
             else
-                EXECENV=${execenv}
+                EXEC_METHOD=${exec_method}
             fi
             shift 2
             ;;
@@ -113,28 +125,31 @@ while true; do
             ;;
     esac
 done
-## ****************************************************************************
+## ***************************************************************** <<< MODIFY
 
-## ****************************************************************************
-#### Log Any Variables Passed as Inputs ####
+## MODIFY >>> *****************************************************************
+## Log any variables passed as inputs
 echo "File: ${FILE}"
 echo "Output: ${OUTPUT}"
-## ****************************************************************************
+echo "Execution Method: ${EXEC_METHOD}"
+## ***************************************************************** <<< MODIFY
 
-#### Check and Set Required Variables ####
 
-## *** Add app-specific logic for handling
-## *** and parsing inputs and parameters
 
-## FILE
+###############################################################################
+#### Validate and Set Required Variables ####
+###############################################################################
+
+## MODIFY >>> *****************************************************************
+## Add app-specific logic for handling and parsing inputs and parameters
+# FILE parameter
 if [ -z "${FILE}" ]; then
     echo "input file required"
     echo
     usage
     exit 1
 fi
-
-# make sure input file is staged
+# make sure FILE is staged
 count=0
 while [ ! -f ${FILE} ]
 do
@@ -147,28 +162,44 @@ if [ ! -f ${FILE} ]; then
     echo "Input not found: ${FILE}"
     exit 1
 fi
-
+# infer full path and basename of FILE
 FILE_DIR=$(dirname $(readlink -f ${FILE}))
 FILE_FILE=$(basename ${FILE})
 
-## OUTPUT
+# OUTPUT parameter
 if [ -z "${OUTPUT}" ]; then
     echo "Output file required"
     echo
     usage
     exit 1
 fi
+## ***************************************************************** <<< MODIFY
 
+## EXEC_METHOD: execution method
+## Possible options:
+##   cdc-module: module(s) in the CDC environment
+##   package: binaries packaged with the app
+##   cdc-package: binaries centrally located at the CDC
+##   singularity: singularity image packaged with the app
+##   cdc-singularity: singularity image centrally located at the CDC
+##   docker: docker containers from docker-hub
+##   cdc-docker: docker containers from internal CDC registry
 
+## MODIFY >>> *****************************************************************
+## List supported execution methods for this app (space delimited)
+exec_methods="cdc-module package"
+## ***************************************************************** <<< MODIFY
 
-
-## EXECENV
-if [ -z "${EXECENV}" ]; then
-    # default execution environment is package
-    EXECENV=package # other options=docker,singularity
+# make sure the specified execution method is included in list
+if [[ ! " ${exec_methods} " =~ .*\ ${EXEC_METHOD}\ .* ]]; then
+    echo "Invalid execution method: ${EXEC_METHOD}"
+    echo
+    usage
+    exit 1
 fi
 
-## SCRIPT_DIR: directory of current script, set depending on exec env
+## SCRIPT_DIR: directory of current script, depends on execution
+## environment, which may be detectable using environment variables
 if [ -z "${AGAVE_JOB_ID}" ]; then
     # not an agave job
     SCRIPT_DIR=$(dirname $(readlink -f $0))
@@ -176,42 +207,72 @@ else
     echo "Agave Job Detected"
     SCRIPT_DIR=$(pwd)
 fi
+## ****************************************************************************
 
 
 
+###############################################################################
+#### App Execution Preparation ####
+###############################################################################
 
-#### Construct App Command ####
-
-## *** Add app-specific logic for execution of the app binaries
-
-case "${EXECENV}" in
+## MODIFY >>> *****************************************************************
+## Add logic to prepare environment for execution
+## There should be one case statement for each item in $exec_methods
+case "${EXEC_METHOD}" in
+    cdc-module)
+        # load modules environment and module(s)
+        source /etc/profile.d/modules.sh
+        module load app/1.0
+        ;;
     package)
-        # unzip package, if required by app app
-        tar --directory=${SCRIPT_DIR}/app-template -xzf ${SCRIPT_DIR}/app-template/app-template.tar.gz
+        # unzip package, if required by app
+        tar\
+            --directory=${SCRIPT_DIR}/app-template \
+            -xzf ${SCRIPT_DIR}/app-template/app-template.tar.gz
         # make executable
         chmod +x ${SCRIPT_DIR}/app-template/bin/binary
-
-        # construct command without pair
-        CMD="${SCRIPT_DIR}/app-template/bin/binary ${INPUT_DIR}/${INPUT_FILE} > ${OUTPUT}"
-        if [ -z "${AGAVE_JOB_ID}" ]; then
-            # not agave, suppress stderr
-            CMD="${CMD} 2> /dev/null"
-        fi
-        ;;
-    docker)
-        # construct docker command
-        CMD="docker run"
-        ;;
-    singularity)
-        # construct singularity command
-        CMD="singularity-cmd"
         ;;
 esac
+## ***************************************************************** <<< MODIFY
 
 
-#### Run Command ####
 
-echo "CMD=${CMD}"
-safeRunCommand "${CMD}"
+###############################################################################
+#### App Execution ####
+###############################################################################
+
+## MODIFY >>> *****************************************************************
+## Add logic to execute app
+## There should be one case statement for each item in $exec_methods
+case "${EXEC_METHOD}" in
+    cdc-module)
+        # run app using loaded module(s)
+        ;;
+    package)
+        # construct run command
+        CMD="${SCRIPT_DIR}/app-template/bin/binary"
+            CMD+=" ${INPUT_DIR}/${INPUT_FILE} > ${OUTPUT} 2> log.stderr"
+        echo "CMD=${CMD}"
+        safeRunCommand "${CMD}"
+        ;;
+esac
+## ***************************************************************** <<< MODIFY
+
+
+
+###############################################################################
+#### Cleanup ####
+###############################################################################
+
+## MODIFY >>> *****************************************************************
+## Add logic to cleanup execution artifacts, if necessary
+## There should be one case statement for each item in $exec_methods
+case "${EXEC_METHOD}" in
+    cdc-module)
+        ;;
+    package)
+        ;;
+esac
+## ***************************************************************** <<< MODIFY
 
 
