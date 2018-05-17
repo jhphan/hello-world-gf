@@ -11,11 +11,11 @@
 ## MODIFY >>> *****************************************************************
 ## Usage description should match command line arguments defined below
 usage () {
-    echo "Usage: $(basename $0) [-h] -f file -o output [-x execenv]"
-    echo "  -f,--file     Input file"
-    echo "  -o,--output   Output file"
-    echo "  -x,--execenv  Execution environment (package, docker, singularity)"
-    echo "  -h,--help     Display this help message"
+    echo "Usage: $(basename $0) [-h] -f file -o output [-x exec_method]"
+    echo "  -f,--file         Input file"
+    echo "  -o,--output       Output file"
+    echo "  -x,--exec_method  Execution method (cdc-module, package)"
+    echo "  -h,--help         Display this help message"
 }
 ## ***************************************************************** <<< MODIFY
 
@@ -54,7 +54,7 @@ fi
 ## MODIFY >>> *****************************************************************
 ## Command line options should match usage description
 OPTIONS=hf:o:x:
-LONGOPTIONS=help,file:,output:,execenv:
+LONGOPTIONS=help,file:,output:,exec_method:
 ## ***************************************************************** <<< MODIFY
 
 # -temporarily store output to be able to check for errors
@@ -144,7 +144,7 @@ echo "Execution Method: ${EXEC_METHOD}"
 ## Add app-specific logic for handling and parsing inputs and parameters
 # FILE parameter
 if [ -z "${FILE}" ]; then
-    echo "input file required"
+    echo "Input file required"
     echo
     usage
     exit 1
@@ -156,7 +156,7 @@ do
     echo "${FILE} not staged, waiting..."
     sleep 1
     (( count++ ))
-    if [ $count == 30 ]; then break; fi
+    if [ $count == 10 ]; then break; fi
 done
 if [ ! -f ${FILE} ]; then
     echo "Input not found: ${FILE}"
@@ -176,7 +176,7 @@ fi
 ## ***************************************************************** <<< MODIFY
 
 ## EXEC_METHOD: execution method
-## Possible options:
+## Suggested possible options:
 ##   cdc-module: module(s) in the CDC environment
 ##   package: binaries packaged with the app
 ##   cdc-package: binaries centrally located at the CDC
@@ -204,7 +204,7 @@ if [ -z "${AGAVE_JOB_ID}" ]; then
     # not an agave job
     SCRIPT_DIR=$(dirname $(readlink -f $0))
 else
-    echo "Agave Job Detected"
+    echo "Agave job detected"
     SCRIPT_DIR=$(pwd)
 fi
 ## ****************************************************************************
