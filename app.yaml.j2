@@ -5,11 +5,13 @@ class: app
 
 name: app-template-0.1-gf
 description: App Template
-type: shell
 inputs:
   file: input1.txt
 parameters:
   output: output.txt
 definition:
-  script: app-template-0.1-gf.sh
+  agave:
+    agave_app_id: {{ agave.appsPrefix }}-app-template-0.1-gf-{{ version }}
+  shell:
+    script: app-template-0.1-gf.sh
 ...
