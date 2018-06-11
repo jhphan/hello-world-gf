@@ -177,17 +177,15 @@ fi
 
 ## EXEC_METHOD: execution method
 ## Suggested possible options:
-##   cdc-module: module(s) in the CDC environment
 ##   package: binaries packaged with the app
-##   cdc-package: binaries centrally located at the CDC
+##   cdc-shared-package: binaries centrally located at the CDC
 ##   singularity: singularity image packaged with the app
-##   cdc-singularity: singularity image centrally located at the CDC
+##   cdc-shared-singularity: singularity image centrally located at the CDC
 ##   docker: docker containers from docker-hub
-##   cdc-docker: docker containers from internal CDC registry
 
 ## MODIFY >>> *****************************************************************
 ## List supported execution methods for this app (space delimited)
-exec_methods="cdc-module package"
+exec_methods="singularity cdc-shared-singularity"
 ## ***************************************************************** <<< MODIFY
 
 # make sure the specified execution method is included in list

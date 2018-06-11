@@ -1,9 +1,7 @@
 %YAML 1.1
 ---
-build-package:
+cdc-package:
 #- ./apps-build-package/app-template-0.1/install:app-template
-package:
+cdc-singularity:
 #- /apps/standalone/package/app-template-0.1:app-template
-docker:
-singularity:
 
