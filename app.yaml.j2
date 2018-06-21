@@ -1,0 +1,21 @@
+%YAML 1.1
+---
+gfVersion: v1.0
+class: app
+
+name: bwa-mem-0.7.17-gf
+description: BWA Mem Alignment
+inputs:
+  input: input1.fastq.gz
+  pair: input2.fastq.gz
+  reference: /reference/dir
+parameters:
+  output: output.sam
+definition:
+{% if agave %}
+  agave:
+    agave_app_id: {{ agave.appsPrefix }}-bwa-mem-0.7.17-gf-{{ version }}
+{% endif %}
+  local:
+    script: bwa-mem-0.7.17-gf.sh
+...
