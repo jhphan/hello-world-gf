@@ -1,9 +1,0 @@
-%YAML 1.1
----
-build-package:
-#- ./apps-build-package/app-template-0.1/install:app-template
-package:
-#- /apps/standalone/package/app-template-0.1:app-template
-docker:
-singularity:
-

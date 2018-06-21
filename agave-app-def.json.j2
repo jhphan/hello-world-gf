@@ -1,7 +1,7 @@
 {
-  "name": "{{ agave.appsPrefix }}-app-template-0.1-gf",
+  "name": "{{ agave.appsPrefix }}-bwa-mem-0.7.17-gf",
   "version": "{{ version }}",
-  "label": "App Template",
+  "label": "BWA Mem",
   "defaultNodeCount": 1,
   "defaultMemoryPerNode": 1,
   "defaultProcessorsPerNode": 1,
@@ -9,18 +9,37 @@
   "parallelism": "SERIAL",
   "checkpointable": false,
   "executionSystem": "{{ agave.executionSystem }}",
-  "deploymentPath": "{{ agave.appsDir }}/app-template-0.1-gf-{{ version }}",
+  "deploymentPath": "{{ agave.appsDir }}/bwa-mem-0.7.17-gf-{{ version }}",
   "deploymentSystem": "{{ agave.deploymentSystem }}",
-  "templatePath": "app-template-0.1-gf.sh",
+  "templatePath": "bwa-mem-0.7.17-gf.sh",
   "testPath": "test/test.sh",
   "inputs": [
     {
-      "id": "file",
+      "id": "input",
       "details": {
-        "label": "Input file"
+        "label": "Input sequence file"
       },
       "value": {
-        "default": "",
+        "default": "agave://{{ agave.deploymentSystem }}/{{ agave.testDataDir }}/bwa-index-0.7.17-gf-{{ version }}/reads/polio-sample_R1.fastq",
+        "required": true
+      }
+    },
+    {
+      "id": "pair",
+      "details": {
+        "label": "Paired end sequence file"
+      },
+      "value": {
+        "required": false
+      }
+    },
+    {
+      "id": "reference",
+      "details": {
+        "label": "Reference index directory"
+      },
+      "value": {
+        "default": "agave://{{ agave.deploymentSystem }}/{{ agave.testDataDir }}/bwa-index-0.7.17-gf-{{ version }}/index",
         "required": true
       }
     }
@@ -29,10 +48,21 @@
     {
       "id": "output",
       "details": {
-        "label": "Output file"
+        "label": "Output SAM file name"
       },
       "value": {
-        "default": "output.txt",
+        "default": "output.sam",
+        "required": true,
+        "type": "string"
+      }
+    },
+    {
+      "id": "exec_method",
+      "details": {
+        "label": "GeneFlow execution method"
+      },
+      "value": {
+        "default": "environment",
         "required": true,
         "type": "string"
       }
