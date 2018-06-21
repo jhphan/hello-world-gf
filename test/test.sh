@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# App test script
+# BWA Mem test script
 
 
 ###############################################################################
@@ -13,7 +13,7 @@ usage () {
     echo "Usage: $(basename $0) [-h] -x exec_method"
     echo "  -x,--exec_method  Execution method (package, cdc-shared-package,"
     echo "                      singularity, cdc-shared-singularity, docker,"
-    echo "                      path)"
+    echo "                      environment)"
     echo "  -h,--help         Display this help message"
 }
 ## ***************************************************************** <<< MODIFY
@@ -108,8 +108,12 @@ done
 #### Run Script ####
 ###############################################################################
 SCRIPT_DIR=$(dirname $(readlink -f $0))
-CMD="${SCRIPT_DIR}/../assets/app-template-0.1-gf.sh "
-    CMD+="-x ${EXEC_METHOD}"
+CMD="${SCRIPT_DIR}/../assets/bwa-mem-0.7.17-gf.sh"
+    CMD+=" -i ${SCRIPT_DIR}/data/reads/polio-sample_R1.fastq"
+    CMD+=" -p ${SCRIPT_DIR}/data/reads/polio-sample_R2.fastq"
+    CMD+=" -r ${SCRIPT_DIR}/data/index"
+    CMD+=" -o ${SCRIPT_DIR}/output.sam"
+    CMD+=" -x ${EXEC_METHOD}"
 echo "CMD=${CMD}"
 safeRunCommand "${CMD}"
 

@@ -3,15 +3,19 @@
 gfVersion: v1.0
 class: app
 
-name: app-template-0.1-gf
-description: App Template
+name: bwa-mem-0.7.17-gf
+description: BWA Mem Alignment
 inputs:
-  file: input1.txt
+  input: input1.fastq.gz
+  pair: input2.fastq.gz
+  reference: /reference/dir
 parameters:
-  output: output.txt
+  output: output.sam
 definition:
+{% if agave %}
   agave:
-    agave_app_id: {{ agave.appsPrefix }}-app-template-0.1-gf-{{ version }}
-  shell:
-    script: app-template-0.1-gf.sh
+    agave_app_id: {{ agave.appsPrefix }}-bwa-mem-0.7.17-gf-{{ version }}
+{% endif %}
+  local:
+    script: bwa-mem-0.7.17-gf.sh
 ...

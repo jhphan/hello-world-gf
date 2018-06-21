@@ -1,0 +1,67 @@
+%YAML 1.1
+---
+
+# Expected format of the config.yaml file:
+#
+# 1. The assets.yaml file can have multiple sections, with no strict naming convention. Each
+#    section encompasses a single app configuration.
+# 2. Each section contains an array.
+# 3. Each array element must have the following fields:
+#    a. type - copy or build
+#    b. src - source of assets. If type == copy, it must be relative to "prefix" passed to the
+#       install script. If type == build, it must be relative to the "workflow" directory inside
+#       the workflow package, and "build" must be the first folder name. src can include wild-
+#       cards, e.g., /folder/*, but if wildcards are specified, zip must be disabled.
+#    c. dst - destination of assets. This is relative to the "workflow" directory inside the 
+#       workflow package, and "assets" must be the first folder name.
+#    d. zip - if present, src files are tar.gz zipped prior to copying to destination. src must be
+#       a folder without wildcards if zipping. 
+#    e. repo - if type == build, repo specifies the source repository to be cloned into the
+#       "build" directory.
+#    f. tag - if repo is specified and type == build, tag is the branch or tag to be cloned.
+#    g. folder - folder to which repo should be cloned.
+#       If "repo" is omitted, "folder" must be present. If so, "folder" refers to a folder inside the 
+#       package "build" directory that contains build scripts. "folder" is useful when build scripts
+#       need to be included as part of the workflow package (instead of in a separate repo).
+#
+
+exec-methods:
+- cdc-shared-singularity
+- singularity
+- cdc-shared-package
+- package
+- docker
+- environment
+
+default-exec-method: singularity
+
+default-asset: singularity
+
+assets:
+  package:
+  - type: copy
+    zip: bwa
+    src: package/bwa-0.7.17
+    dst: assets/bwa
+
+  singularity:
+  - type: copy
+    src: singularity/bwa/bwa-0.7.17-biocontainers.simg
+    dst: assets
+
+  build-package:
+  - type: build
+    repo: git@git.biotech.cdc.gov:containers/bwa-0.7.17-package
+    tag: master
+    folder: bwa-0.7.17-package
+    zip: bwa
+    src: build/bwa-0.7.17-package/install
+    dst: assets/bwa
+
+  build-singularity:
+  - type: build
+    repo: git@git.biotech.cdc.gov:containers/bwa-0.7.17-biocontainers
+    tag: master
+    folder: bwa-0.7.17-biocontainers
+    src: build/bwa-0.7.17-biocontainers/build/bwa-0.7.17-biocontainers.simg
+    dst: assets
