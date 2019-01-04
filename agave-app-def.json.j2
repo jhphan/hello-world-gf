@@ -1,6 +1,6 @@
 {
   "name": "{{ agave.appsPrefix }}-bwa-mem-0.7.17-gf",
-  "version": "{{ version }}",
+  "version": "0.4",
   "label": "BWA Mem",
   "defaultNodeCount": 1,
   "defaultMemoryPerNode": 1,
@@ -9,61 +9,49 @@
   "parallelism": "SERIAL",
   "checkpointable": false,
   "executionSystem": "{{ agave.executionSystem }}",
-  "deploymentPath": "{{ agave.appsDir }}/bwa-mem-0.7.17-gf-{{ version }}",
+  "deploymentPath": "{{ agave.appsDir }}/bwa-mem-0.7.17-gf-0.4",
   "deploymentSystem": "{{ agave.deploymentSystem }}",
   "templatePath": "bwa-mem-0.7.17-gf.sh",
   "testPath": "test/test.sh",
   "inputs": [
-    {
-      "id": "input",
-      "details": {
-        "label": "Input sequence file"
-      },
+    { "id": "input",
       "value": {
-        "default": "agave://{{ agave.deploymentSystem }}/{{ agave.testDataDir }}/bwa-index-0.7.17-gf-{{ version }}/reads/polio-sample_R1.fastq",
-        "required": true
+        "required": true,
+        "default": ""
       }
     },
-    {
-      "id": "pair",
-      "details": {
-        "label": "Paired end sequence file"
-      },
+    { "id": "pair",
       "value": {
-        "required": false
+        "required": false,
+        "default": ""
       }
     },
-    {
-      "id": "reference",
-      "details": {
-        "label": "Reference index directory"
-      },
+    { "id": "reference",
       "value": {
-        "default": "agave://{{ agave.deploymentSystem }}/{{ agave.testDataDir }}/bwa-index-0.7.17-gf-{{ version }}/index",
-        "required": true
+        "required": true,
+        "default": ""
       }
     }
   ],
   "parameters": [
-    {
-      "id": "output",
-      "details": {
-        "label": "Output SAM file name"
-      },
+    { "id": "threads",
       "value": {
-        "default": "output.sam",
+        "required": false,
+        "default": 2,
+        "type": "number"
+      }
+    },
+    { "id": "output",
+      "value": {
         "required": true,
+        "default": ,
         "type": "string"
       }
     },
-    {
-      "id": "exec_method",
-      "details": {
-        "label": "GeneFlow execution method"
-      },
+    { "id": "exec_method",
       "value": {
-        "default": "environment",
         "required": true,
+        "default": "auto",
         "type": "string"
       }
     }

@@ -1,7 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-# BWA Mem app wrapper script
-
+# BWA Mem wrapper script
 
 
 ###############################################################################
@@ -11,28 +10,34 @@
 ## MODIFY >>> *****************************************************************
 ## Usage description should match command line arguments defined below
 usage () {
-    echo "Usage: $(basename $0) [-h] -i input [-p pair] -r reference -o output"
-    echo "      [-x exec_method]"
-    echo "  -i,--input        Input sequence file"
-    echo "  -p,--pair         Paired-end sequence file"
-    echo "  -r,--reference    BWA reference index"
-    echo "  -o,--output       Output SAM file"
-    echo "  -x,--exec_method  Execution method (package, cdc-shared-package,"
-    echo "                      singularity, cdc-shared-singularity, docker,"
-    echo "                      environment)"
-    echo "  -h,--help         Display this help message"
+    echo "Usage: $(basename $0)"
+    echo "  --input => Sequence FASTQ File"
+    echo "  --pair => Paired-End Sequence FASTQ File"
+    echo "  --reference => Reference Index"
+    echo "  --threads => CPU Threads"
+    echo "  --output => Output SAM File"
+    echo "  --exec_method => Execution method (singularity, cdc-shared-singularity, docker, environment, auto)"
+    echo "  --help => Display this help message"
 }
 ## ***************************************************************** <<< MODIFY
 
 # report error code for command
 safeRunCommand() {
     cmd="$@"
-    eval $cmd
+    eval "$cmd"
     ERROR_CODE=$?
     if [ ${ERROR_CODE} -ne 0 ]; then
         echo "Error when executing command '${cmd}'"
         exit ${ERROR_CODE}
     fi
+}
+
+# print message and exit
+fail() {
+    msg="$@"
+    echo "${msg}"
+    usage
+    exit 1
 }
 
 # always report exit code
@@ -58,8 +63,8 @@ fi
 
 ## MODIFY >>> *****************************************************************
 ## Command line options should match usage description
-OPTIONS=hi:p:r:o:x:
-LONGOPTIONS=help,input:,pair:,reference:,output:,exec_method:
+OPTIONS=
+LONGOPTIONS=help,exec_method:,input:,pair:,reference:,threads:,output:,
 ## ***************************************************************** <<< MODIFY
 
 # -temporarily store output to be able to check for errors
@@ -80,7 +85,8 @@ eval set -- "$PARSED"
 
 ## MODIFY >>> *****************************************************************
 ## Set any defaults for command line options
-EXEC_METHOD=package
+THREADS=2    
+EXEC_METHOD=auto
 ## ***************************************************************** <<< MODIFY
 
 ## MODIFY >>> *****************************************************************
@@ -91,11 +97,11 @@ EXEC_METHOD=package
 ## line parameter.
 while true; do
     case "$1" in
-        -h|--help)
+        --help)
             usage
             exit 0
             ;;
-        -i|--input)
+        --input)
             if [ -z "${input}" ]; then
                 INPUT=$2
             else
@@ -103,7 +109,7 @@ while true; do
             fi
             shift 2
             ;;
-        -p|--pair)
+        --pair)
             if [ -z "${pair}" ]; then
                 PAIR=$2
             else
@@ -111,7 +117,7 @@ while true; do
             fi
             shift 2
             ;;
-        -r|--reference)
+        --reference)
             if [ -z "${reference}" ]; then
                 REFERENCE=$2
             else
@@ -119,7 +125,15 @@ while true; do
             fi
             shift 2
             ;;
-        -o|--output)
+        --threads)
+            if [ -z "${threads}" ]; then
+                THREADS=$2
+            else
+                THREADS=${threads}
+            fi
+            shift 2
+            ;;
+        --output)
             if [ -z "${output}" ]; then
                 OUTPUT=$2
             else
@@ -127,7 +141,7 @@ while true; do
             fi
             shift 2
             ;;
-        -x|--exec_method)
+        --exec_method)
             if [ -z "${exec_method}" ]; then
                 EXEC_METHOD=$2
             else
@@ -153,6 +167,7 @@ done
 echo "Input: ${INPUT}"
 echo "Pair: ${PAIR}"
 echo "Reference: ${REFERENCE}"
+echo "Threads: ${THREADS}"
 echo "Output: ${OUTPUT}"
 echo "Execution Method: ${EXEC_METHOD}"
 ## ***************************************************************** <<< MODIFY
@@ -165,9 +180,11 @@ echo "Execution Method: ${EXEC_METHOD}"
 
 ## MODIFY >>> *****************************************************************
 ## Add app-specific logic for handling and parsing inputs and parameters
-# INPUT parameter
+
+# INPUT input
+
 if [ -z "${INPUT}" ]; then
-    echo "input sequence file required"
+    echo "Sequence FASTQ File required"
     echo
     usage
     exit 1
@@ -182,15 +199,19 @@ do
     if [ $count == 10 ]; then break; fi
 done
 if [ ! -f ${INPUT} ]; then
-    echo "Input not found: ${INPUT}"
+    echo "Sequence FASTQ File not found: ${INPUT}"
     exit 1
 fi
-INPUT_DIR=$(dirname $(readlink -f ${INPUT}))
-INPUT_FILE=$(basename ${INPUT})
+INPUT_FULL=$(readlink -f ${INPUT})
+INPUT_DIR=$(dirname ${INPUT_FULL})
+INPUT_BASE=$(basename ${INPUT_FULL})
 
-# PAIR parameter
+
+
+# PAIR input
+
 if [ -n "${PAIR}" ]; then
-    # make sure PAIR is staged
+    # make sure ${PAIR} is staged
     count=0
     while [ ! -f ${PAIR} ]
     do
@@ -200,16 +221,20 @@ if [ -n "${PAIR}" ]; then
         if [ $count == 10 ]; then break; fi
     done
     if [ ! -f ${PAIR} ]; then
-        echo "Pair not found: ${PAIR}"
+        echo "Paired-End Sequence FASTQ File not found: ${PAIR}"
         exit 1
     fi
-    PAIR_DIR=$(dirname $(readlink -f ${PAIR}))
-    PAIR_FILE=$(basename ${PAIR})
+    PAIR_FULL=$(readlink -f ${PAIR})
+    PAIR_DIR=$(dirname ${PAIR_FULL})
+    PAIR_BASE=$(basename ${PAIR_FULL})
 fi
 
-# REFERENCE parameter
+
+
+# REFERENCE input
+
 if [ -z "${REFERENCE}" ]; then
-    echo "BWA reference index required"
+    echo "Reference Index required"
     echo
     usage
     exit 1
@@ -224,47 +249,60 @@ do
     if [ $count == 10 ]; then break; fi
 done
 if [ ! -d ${REFERENCE} ]; then
-    echo "Reference not found: ${REFERENCE}"
+    echo "Reference Index not found: ${REFERENCE}"
     exit 1
 fi
-# infer full path of REFERENCE
-REFERENCE_DIR=$(readlink -f ${REFERENCE})
-# reference directory should contain a *.bwt file
-BWT_FILE=$(ls ${REFERENCE_DIR} | grep '.bwt$')
+REFERENCE_FULL=$(readlink -f ${REFERENCE})
+REFERENCE_DIR=$(dirname ${REFERENCE_FULL})
+REFERENCE_BASE=$(basename ${REFERENCE_FULL})
+CMD="";MNT="";ARG="";CMD0="BWT_FILE=$(ls ${REFERENCE_FULL} | grep '.bwt$') ${ARG}";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
 if [ -z "${BWT_FILE}" ]; then
-    # bwt file not found, not a valid BWA reference index
-    echo "Invalid BWA reference index"
-    echo
-    usage
-    exit 1
+    CMD="";MNT="";ARG="";CMD0="fail 'Invalid BWA reference index' ${ARG}";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
 fi
-# get base of bwt file
-BWT_PREFIX="${BWT_FILE%.*}"
+CMD="";MNT="";ARG="";CMD0="BWT_PREFIX=\"${BWT_FILE%.*}\" ${ARG}";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
+
+
+
+
+# THREADS parameter
+if [ -n "${THREADS}" ]; then
+    :
+else
+    :
+fi
+
 
 # OUTPUT parameter
-if [ -z "${OUTPUT}" ]; then
-    echo "Output SAM file required"
+if [ -n "${OUTPUT}" ]; then
+    :
+    OUTPUT_FULL=$(readlink -f ${OUTPUT})
+    OUTPUT_DIR=$(dirname ${OUTPUT_FULL})
+    OUTPUT_BASE=$(basename ${OUTPUT_FULL})
+else
+    :
+    echo "Output SAM File required"
     echo
     usage
     exit 1
 fi
-OUTPUT_DIR=$(dirname $(readlink -f ${OUTPUT}))
-OUTPUT_FILE=$(basename ${OUTPUT})
+
+
 ## ***************************************************************** <<< MODIFY
 
 ## EXEC_METHOD: execution method
 ## Suggested possible options:
+##   auto: automatically determine execution method
 ##   package: binaries packaged with the app
 ##   cdc-shared-package: binaries centrally located at the CDC
 ##   singularity: singularity image packaged with the app
 ##   cdc-shared-singularity: singularity image centrally located at the CDC
 ##   docker: docker containers from docker-hub
 ##   environment: binaries available in environment path
+##   module: environment modules
 
 ## MODIFY >>> *****************************************************************
 ## List supported execution methods for this app (space delimited)
-exec_methods="package cdc-shared-package singularity cdc-shared-singularity"
-    exec_methods+=" docker environment"
+exec_methods="singularity cdc-shared-singularity docker environment auto"
 ## ***************************************************************** <<< MODIFY
 
 # make sure the specified execution method is included in list
@@ -289,134 +327,90 @@ fi
 
 
 ###############################################################################
-#### App Execution Preparation ####
+#### Auto-Detect Execution Method ####
+###############################################################################
+
+# assign to new variable in order to auto-detect after Agave
+# substitution of EXEC_METHOD
+AUTO_EXEC=${EXEC_METHOD}
+## MODIFY >>> *****************************************************************
+## Add app-specific paths to detect the execution method.
+if [ "${EXEC_METHOD}" = "auto" ]; then
+    # detect if singularity available
+    if command -v singularity >/dev/null 2>&1; then
+        SINGULARITY=yes
+    else
+        SINGULARITY=no
+    fi
+
+    # detect if docker available
+    if command -v docker >/dev/null 2>&1; then
+        DOCKER=yes
+    else
+        DOCKER=no
+    fi
+
+    # detect execution method
+    if { [ "${SINGULARITY}" = "yes" ] && [ -f "${SCRIPT_DIR}/bwa-0.7.17-biocontainers.simg" ]; }; then
+        AUTO_EXEC=singularity
+    elif { [ "${SINGULARITY}" = "yes" ] && [ -f "/apps/standalone/singularity/bwa/bwa-0.7.17-biocontainers.simg" ]; }; then
+        AUTO_EXEC=cdc-shared-singularity
+    elif [ "${DOCKER}" = "yes" ]; then
+        AUTO_EXEC=docker
+    elif command -v bwa >/dev/null 2>&1; then
+        AUTO_EXEC=environment
+    else
+        echo "Valid execution method not detected"
+        echo
+        usage
+        exit 1
+    fi
+    echo "Detected Execution Method: ${AUTO_EXEC}"
+fi
+## ****************************************************************************
+
+
+
+###############################################################################
+#### App Execution Preparation, Common to all Exec Methods ####
 ###############################################################################
 
 ## MODIFY >>> *****************************************************************
 ## Add logic to prepare environment for execution
-## There should be one case statement for each item in $exec_methods
-case "${EXEC_METHOD}" in
-    package)
-        # unzip package, if required by app
-        tar --directory=${SCRIPT_DIR}/bwa -xzf ${SCRIPT_DIR}/bwa/bwa.tar.gz
-        # make executable
-        chmod +x ${SCRIPT_DIR}/bwa/bin/bwa
-        ;;
-    cdc-shared-package)
-        ;;
-    singularity)
-        ;;
-    cdc-shared-singularity)
-        ;;
-    docker)
-        ;;
-    environment)
-        ;;
-esac
 ## ***************************************************************** <<< MODIFY
 
 
 
 ###############################################################################
-#### App Execution ####
+#### App Execution, Specific to each Exec Method ####
 ###############################################################################
 
 ## MODIFY >>> *****************************************************************
 ## Add logic to execute app
 ## There should be one case statement for each item in $exec_methods
-case "${EXEC_METHOD}" in
-    package)
-        CMD="${SCRIPT_DIR}/bwa/bin/bwa mem"
-            CMD+=" ${REFERENCE_DIR}/${BWT_PREFIX}"
-            CMD+=" ${INPUT_DIR}/${INPUT_FILE}"
-            if [ -n "${PAIR_DIR}" ]; then
-                CMD+=" ${PAIR_DIR}/${PAIR_FILE}"
-            fi
-            CMD+=" > ${OUTPUT_DIR}/${OUTPUT_FILE} 2> log.stderr"
-        ;;
-    cdc-shared-package)
-        CMD="/apps/standalone/package/bwa-0.7.17/bin/bwa mem"
-            CMD+=" ${REFERENCE_DIR}/${BWT_PREFIX}"
-            CMD+=" ${INPUT_DIR}/${INPUT_FILE}"
-            if [ -n "${PAIR_DIR}" ]; then
-                CMD+=" ${PAIR_DIR}/${PAIR_FILE}"
-            fi
-            CMD+=" > ${OUTPUT_DIR}/${OUTPUT_FILE} 2> log.stderr"
-        ;;
+case "${AUTO_EXEC}" in
     singularity)
-        CMD="singularity run ${SCRIPT_DIR}/bwa-0.7.17-biocontainers.simg"
-            CMD+=" bwa mem"
-            CMD+=" ${REFERENCE_DIR}/${BWT_PREFIX}"
-            CMD+=" ${INPUT_DIR}/${INPUT_FILE}"
-            if [ -n "${PAIR_DIR}" ]; then
-                CMD+=" ${PAIR_DIR}/${PAIR_FILE}"
-            fi
-            CMD+=" > ${OUTPUT_DIR}/${OUTPUT_FILE} 2> log.stderr"
+        CMD="";MNT="";ARG="";ARG+=" -t";ARG+=" ${THREADS}";MNT+=" -B ";MNT+="${REFERENCE_DIR}:/data2";ARG+=" /data2/${REFERENCE_BASE}/${BWT_PREFIX}";MNT+=" -B ";MNT+="${INPUT_DIR}:/data3";ARG+=" /data3/${INPUT_BASE}";if [ -n "${PAIR}" ]; then MNT+=" -B ";MNT+="${PAIR_DIR}:/data4";ARG+=" /data4/${PAIR_BASE}";fi;CMD0="singularity run ${MNT} ${SCRIPT_DIR}/bwa-0.7.17-biocontainers.simg bwa mem ${ARG}";CMD0+=" > ${OUTPUT_DIR}/${OUTPUT_BASE}";CMD0+=" 2> log.stderr";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
         ;;
     cdc-shared-singularity)
-        CMD="singularity run"
-            CMD+=" /apps/standalone/singularity/bwa/bwa-0.7.17-biocontainers.simg"
-            CMD+=" bwa mem"
-            CMD+=" ${REFERENCE_DIR}/${BWT_PREFIX}"
-            CMD+=" ${INPUT_DIR}/${INPUT_FILE}"
-            if [ -n "${PAIR_DIR}" ]; then
-                CMD+=" ${PAIR_DIR}/${PAIR_FILE}"
-            fi
-            CMD+=" > ${OUTPUT_DIR}/${OUTPUT_FILE} 2> log.stderr"
+        CMD="";MNT="";ARG="";ARG+=" -t";ARG+=" ${THREADS}";MNT+=" -B ";MNT+="${REFERENCE_DIR}:/data2";ARG+=" /data2/${REFERENCE_BASE}/${BWT_PREFIX}";MNT+=" -B ";MNT+="${INPUT_DIR}:/data3";ARG+=" /data3/${INPUT_BASE}";if [ -n "${PAIR}" ]; then MNT+=" -B ";MNT+="${PAIR_DIR}:/data4";ARG+=" /data4/${PAIR_BASE}";fi;CMD0="singularity run ${MNT} /apps/standalone/singularity/bwa/bwa-0.7.17-biocontainers.simg bwa mem ${ARG}";CMD0+=" > ${OUTPUT_DIR}/${OUTPUT_BASE}";CMD0+=" 2> log.stderr";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
         ;;
     docker)
-        CMD="docker run --rm"
-            CMD+=" -v ${INPUT_DIR}:/data1"
-            if [ -n "${PAIR_DIR}" ]; then
-                CMD+=" -v ${PAIR_DIR}:/data2"
-            fi
-            CMD+=" -v ${REFERENCE_DIR}:/reference"
-            CMD+=" quay.io/biocontainers/bwa:0.7.17--pl5.22.0_2"
-            CMD+=" bwa mem"
-            CMD+=" /reference/${BWT_PREFIX}"
-            CMD+=" /data1/${INPUT_FILE}"
-            if [ -n "${PAIR_DIR}" ]; then
-                CMD+=" /data2/${PAIR_FILE}"
-            fi
-            CMD+=" > ${OUTPUT_DIR}/${OUTPUT_FILE} 2> log.stderr"
+        CMD="";MNT="";ARG="";ARG+=" -t";ARG+=" ${THREADS}";MNT+=" -v ";MNT+="${REFERENCE_DIR}:/data2";ARG+=" /data2/${REFERENCE_BASE}/${BWT_PREFIX}";MNT+=" -v ";MNT+="${INPUT_DIR}:/data3";ARG+=" /data3/${INPUT_BASE}";if [ -n "${PAIR}" ]; then MNT+=" -v ";MNT+="${PAIR_DIR}:/data4";ARG+=" /data4/${PAIR_BASE}";fi;CMD0="docker run --rm ${MNT} quay.io/biocontainers/bwa:0.7.17--pl5.22.0_2 bwa mem ${ARG}";CMD0+=" > ${OUTPUT_DIR}/${OUTPUT_BASE}";CMD0+=" 2> log.stderr";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
         ;;
     environment)
-        CMD="bwa mem"
-            CMD+=" ${REFERENCE_DIR}/${BWT_PREFIX}"
-            CMD+=" ${INPUT_DIR}/${INPUT_FILE}"
-            if [ -n "${PAIR_DIR}" ]; then
-                CMD+=" ${PAIR_DIR}/${PAIR_FILE}"
-            fi
-            CMD+=" > ${OUTPUT_DIR}/${OUTPUT_FILE} 2> log.stderr"
+        CMD="";MNT="";ARG="";ARG+=" -t";ARG+=" ${THREADS}";ARG+=" ${REFERENCE_FULL}/${BWT_PREFIX}";ARG+=" ${INPUT_FULL}";if [ -n "${PAIR}" ]; then ARG+=" ${PAIR_FULL}";fi;CMD0="bwa mem ${ARG}";CMD0+=" > ${OUTPUT_DIR}/${OUTPUT_BASE}";CMD0+=" 2> log.stderr";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
         ;;
 esac
-echo "CMD=${CMD}"
-safeRunCommand "${CMD}"
 ## ***************************************************************** <<< MODIFY
 
 
 
 ###############################################################################
-#### Cleanup ####
+#### Cleanup, Common to All Exec Methods ####
 ###############################################################################
 
 ## MODIFY >>> *****************************************************************
 ## Add logic to cleanup execution artifacts, if necessary
-## There should be one case statement for each item in $exec_methods
-case "${EXEC_METHOD}" in
-    package)
-        ;;
-    cdc-shared-package)
-        ;;
-    singularity)
-        ;;
-    cdc-shared-singularity)
-        ;;
-    docker)
-        ;;
-    environment)
-        ;;
-esac
 ## ***************************************************************** <<< MODIFY
-
 

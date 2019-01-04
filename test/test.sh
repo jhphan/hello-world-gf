@@ -10,18 +10,16 @@
 ## MODIFY >>> *****************************************************************
 ## Usage description should match command line arguments defined below
 usage () {
-    echo "Usage: $(basename $0) [-h] -x exec_method"
-    echo "  -x,--exec_method  Execution method (package, cdc-shared-package,"
-    echo "                      singularity, cdc-shared-singularity, docker,"
-    echo "                      environment)"
-    echo "  -h,--help         Display this help message"
+    echo "Usage: $(basename $0)"
+    echo "  --exec_method => Execution method (singularity, cdc-shared-singularity, docker, environment, auto)"
+    echo "  --help => Display this help message"
 }
 ## ***************************************************************** <<< MODIFY
 
 # report error code for command
 safeRunCommand() {
     cmd="$@"
-    eval $cmd
+    eval "$cmd"
     ERROR_CODE=$?
     if [ ${ERROR_CODE} -ne 0 ]; then
         echo "Error when executing command '${cmd}'"
@@ -74,18 +72,18 @@ eval set -- "$PARSED"
 
 ## MODIFY >>> *****************************************************************
 ## Set any defaults for command line options
-EXEC_METHOD=package
+EXEC_METHOD=auto
 ## ***************************************************************** <<< MODIFY
 
 ## MODIFY >>> *****************************************************************
 ## Handle each command line option.
 while true; do
     case "$1" in
-        -h|--help)
+        --help)
             usage
             exit 0
             ;;
-        -x|--exec_method)
+        --exec_method)
             EXEC_METHOD=$2
             shift 2
             ;;
@@ -109,12 +107,12 @@ done
 ###############################################################################
 SCRIPT_DIR=$(dirname $(readlink -f $0))
 CMD="${SCRIPT_DIR}/../assets/bwa-mem-0.7.17-gf.sh"
-    CMD+=" -i ${SCRIPT_DIR}/data/reads/polio-sample_R1.fastq"
-    CMD+=" -p ${SCRIPT_DIR}/data/reads/polio-sample_R2.fastq"
-    CMD+=" -r ${SCRIPT_DIR}/data/index"
-    CMD+=" -o ${SCRIPT_DIR}/output.sam"
-    CMD+=" -x ${EXEC_METHOD}"
+    CMD+=" --input=${SCRIPT_DIR}/data/reads/polio-sample_R1.fastq"
+    CMD+=" --pair=${SCRIPT_DIR}/data/reads/polio-sample_R2.fastq"
+    CMD+=" --reference=${SCRIPT_DIR}/data/index"
+    CMD+=" --threads=2"
+    CMD+=" --output=output.sam"
+    CMD+=" --exec_method=${EXEC_METHOD}"
 echo "CMD=${CMD}"
 safeRunCommand "${CMD}"
-
 

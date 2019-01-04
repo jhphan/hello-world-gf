@@ -4,17 +4,36 @@ gfVersion: v1.0
 class: app
 
 name: bwa-mem-0.7.17-gf
-description: BWA Mem Alignment
+description: BWA Mem
+repo_uri: https://git.biotech.cdc.gov/geneflow-apps/bwa-mem-0.7.17-gf.git
+version: '0.4'
 inputs:
-  input: input1.fastq.gz
-  pair: input2.fastq.gz
-  reference: /reference/dir
+  input:
+    label: Sequence FASTQ File
+    description: Sequence FASTQ file
+    type: File
+  pair:
+    label: Paired-End Sequence FASTQ File
+    description: Paired-end sequence FASTQ file
+    type: File
+  reference:
+    label: Reference Index
+    description: Reference index directory
+    type: Directory
 parameters:
-  output: output.sam
+  threads:
+    label: CPU Threads
+    description: Number of CPU threads used for alignment
+    type: int
+    default: 2
+  output:
+    label: Output SAM File
+    description: Output SAM file
+    type: File
 definition:
 {% if agave %}
   agave:
-    agave_app_id: {{ agave.appsPrefix }}-bwa-mem-0.7.17-gf-{{ version }}
+    agave_app_id: {{ agave.appsPrefix }}-bwa-mem-0.7.17-gf-0.4{{ revision }}
 {% endif %}
   local:
     script: bwa-mem-0.7.17-gf.sh
