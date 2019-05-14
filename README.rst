@@ -1,9 +1,9 @@
-BWA Mem 0.7.17 GeneFlow App
-===========================
+GeneFlow App Template
+=====================
 
 Version: 0.3
 
-This GeneFlow app wraps the BWA 0.7.17 mem tool.
+This GeneFlow template app wraps the BWA 0.7.17 mem tool.
 
 Inputs
 ------

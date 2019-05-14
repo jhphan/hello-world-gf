@@ -10,7 +10,7 @@
 ## MODIFY >>> *****************************************************************
 ## Usage description should match command line arguments defined below
 usage () {
-    echo "Usage: $(basename $0)"
+    echo "Usage: $(basename "$0")"
     echo "  --exec_method => Execution method (singularity, cdc-shared-singularity, docker, environment, auto)"
     echo "  --help => Display this help message"
 }
@@ -43,7 +43,7 @@ trap "reportExit" EXIT
 ###############################################################################
 
 getopt --test > /dev/null
-if [[ $? -ne 4 ]]; then
+if [ $? -ne 4 ]; then
     echo "`getopt --test` failed in this environment."
     exit 1
 fi
@@ -60,7 +60,7 @@ LONGOPTIONS=help,exec_method:
 PARSED=$(\
     getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@"\
 )
-if [[ $? -ne 0 ]]; then
+if [ $? -ne 0 ]; then
     # e.g. $? == 1
     #  then getopt has complained about wrong arguments to stdout
     usage
@@ -105,14 +105,14 @@ done
 ###############################################################################
 #### Run Script ####
 ###############################################################################
-SCRIPT_DIR=$(dirname $(readlink -f $0))
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 CMD="${SCRIPT_DIR}/../assets/bwa-mem-0.7.17-gf.sh"
-    CMD+=" --input=${SCRIPT_DIR}/data/reads/polio-sample_R1.fastq"
-    CMD+=" --pair=${SCRIPT_DIR}/data/reads/polio-sample_R2.fastq"
-    CMD+=" --reference=${SCRIPT_DIR}/data/index"
-    CMD+=" --threads=2"
-    CMD+=" --output=output.sam"
-    CMD+=" --exec_method=${EXEC_METHOD}"
+    CMD="${CMD} --input=\"${SCRIPT_DIR}/data/reads/polio-sample_R1.fastq\""
+    CMD="${CMD} --pair=\"${SCRIPT_DIR}/data/reads/polio-sample_R2.fastq\""
+    CMD="${CMD} --reference=\"${SCRIPT_DIR}/data/index\""
+    CMD="${CMD} --threads=\"2\""
+    CMD="${CMD} --output=\"output.sam\""
+    CMD="${CMD} --exec_method=\"${EXEC_METHOD}\""
 echo "CMD=${CMD}"
 safeRunCommand "${CMD}"
 

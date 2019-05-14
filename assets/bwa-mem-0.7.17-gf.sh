@@ -10,7 +10,7 @@
 ## MODIFY >>> *****************************************************************
 ## Usage description should match command line arguments defined below
 usage () {
-    echo "Usage: $(basename $0)"
+    echo "Usage: $(basename "$0")"
     echo "  --input => Sequence FASTQ File"
     echo "  --pair => Paired-End Sequence FASTQ File"
     echo "  --reference => Reference Index"
@@ -49,6 +49,33 @@ reportExit() {
 
 trap "reportExit" EXIT
 
+# check if string contains another string
+contains() {
+    string="$1"
+    substring="$2"
+
+    if test "${string#*$substring}" != "$string"; then
+        return 0    # $substring is not in $string
+    else
+        return 1    # $substring is in $string
+    fi
+}
+
+
+
+###############################################################################
+## SCRIPT_DIR: directory of current script, depends on execution
+## environment, which may be detectable using environment variables
+###############################################################################
+if [ -z "${AGAVE_JOB_ID}" ]; then
+    # not an agave job
+    SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+else
+    echo "Agave job detected"
+    SCRIPT_DIR=$(pwd)
+fi
+## ****************************************************************************
+
 
 
 ###############################################################################
@@ -56,7 +83,7 @@ trap "reportExit" EXIT
 ###############################################################################
 
 getopt --test > /dev/null
-if [[ $? -ne 4 ]]; then
+if [ $? -ne 4 ]; then
     echo "`getopt --test` failed in this environment."
     exit 1
 fi
@@ -73,7 +100,7 @@ LONGOPTIONS=help,exec_method:,input:,pair:,reference:,threads:,output:,
 PARSED=$(\
     getopt --options=$OPTIONS --longoptions=$LONGOPTIONS --name "$0" -- "$@"\
 )
-if [[ $? -ne 0 ]]; then
+if [ $? -ne 0 ]; then
     # e.g. $? == 1
     #  then getopt has complained about wrong arguments to stdout
     usage
@@ -195,17 +222,16 @@ while [ ! -f ${INPUT} ]
 do
     echo "${INPUT} not staged, waiting..."
     sleep 1
-    (( count++ ))
+    count=$((count+1))
     if [ $count == 10 ]; then break; fi
 done
 if [ ! -f ${INPUT} ]; then
     echo "Sequence FASTQ File not found: ${INPUT}"
     exit 1
 fi
-INPUT_FULL=$(readlink -f ${INPUT})
-INPUT_DIR=$(dirname ${INPUT_FULL})
-INPUT_BASE=$(basename ${INPUT_FULL})
-
+INPUT_FULL=$(readlink -f "${INPUT}")
+INPUT_DIR=$(dirname "${INPUT_FULL}")
+INPUT_BASE=$(basename "${INPUT_FULL}")
 
 
 # PAIR input
@@ -217,16 +243,16 @@ if [ -n "${PAIR}" ]; then
     do
         echo "${PAIR} not staged, waiting..."
         sleep 1
-        (( count++ ))
+        count=$((count+1))
         if [ $count == 10 ]; then break; fi
     done
     if [ ! -f ${PAIR} ]; then
         echo "Paired-End Sequence FASTQ File not found: ${PAIR}"
         exit 1
     fi
-    PAIR_FULL=$(readlink -f ${PAIR})
-    PAIR_DIR=$(dirname ${PAIR_FULL})
-    PAIR_BASE=$(basename ${PAIR_FULL})
+    PAIR_FULL=$(readlink -f "${PAIR}")
+    PAIR_DIR=$(dirname "${PAIR_FULL}")
+    PAIR_BASE=$(basename "${PAIR_FULL}")
 fi
 
 
@@ -245,22 +271,19 @@ while [ ! -d ${REFERENCE} ]
 do
     echo "${REFERENCE} not staged, waiting..."
     sleep 1
-    (( count++ ))
+    count=$((count+1))
     if [ $count == 10 ]; then break; fi
 done
 if [ ! -d ${REFERENCE} ]; then
     echo "Reference Index not found: ${REFERENCE}"
     exit 1
 fi
-REFERENCE_FULL=$(readlink -f ${REFERENCE})
-REFERENCE_DIR=$(dirname ${REFERENCE_FULL})
-REFERENCE_BASE=$(basename ${REFERENCE_FULL})
-CMD="";MNT="";ARG="";CMD0="BWT_FILE=$(ls ${REFERENCE_FULL} | grep '.bwt$') ${ARG}";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
-if [ -z "${BWT_FILE}" ]; then
-    CMD="";MNT="";ARG="";CMD0="fail 'Invalid BWA reference index' ${ARG}";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
-fi
-CMD="";MNT="";ARG="";CMD0="BWT_PREFIX=\"${BWT_FILE%.*}\" ${ARG}";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
-
+REFERENCE_FULL=$(readlink -f "${REFERENCE}")
+REFERENCE_DIR=$(dirname "${REFERENCE_FULL}")
+REFERENCE_BASE=$(basename "${REFERENCE_FULL}")
+MNT=""; ARG=""; CMD0="BWT_FILE=$(ls ${REFERENCE_FULL} | grep '.bwt$') ${ARG}"; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
+if [ -z "${BWT_FILE}" ]; then MNT=""; ARG=""; CMD0="fail 'Invalid BWA reference index' ${ARG}"; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; fi; 
+MNT=""; ARG=""; CMD0="BWT_PREFIX=\"${BWT_FILE%.*}\" ${ARG}"; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
 
 
 
@@ -275,9 +298,9 @@ fi
 # OUTPUT parameter
 if [ -n "${OUTPUT}" ]; then
     :
-    OUTPUT_FULL=$(readlink -f ${OUTPUT})
-    OUTPUT_DIR=$(dirname ${OUTPUT_FULL})
-    OUTPUT_BASE=$(basename ${OUTPUT_FULL})
+    OUTPUT_FULL=$(readlink -f "${OUTPUT}")
+    OUTPUT_DIR=$(dirname "${OUTPUT_FULL}")
+    OUTPUT_BASE=$(basename "${OUTPUT_FULL}")
 else
     :
     echo "Output SAM File required"
@@ -306,23 +329,12 @@ exec_methods="singularity cdc-shared-singularity docker environment auto"
 ## ***************************************************************** <<< MODIFY
 
 # make sure the specified execution method is included in list
-if [[ ! " ${exec_methods} " =~ .*\ ${EXEC_METHOD}\ .* ]]; then
+if ! contains " ${exec_methods} " " ${EXEC_METHOD} "; then
     echo "Invalid execution method: ${EXEC_METHOD}"
     echo
     usage
     exit 1
 fi
-
-## SCRIPT_DIR: directory of current script, depends on execution
-## environment, which may be detectable using environment variables
-if [ -z "${AGAVE_JOB_ID}" ]; then
-    # not an agave job
-    SCRIPT_DIR=$(dirname $(readlink -f $0))
-else
-    echo "Agave job detected"
-    SCRIPT_DIR=$(pwd)
-fi
-## ****************************************************************************
 
 
 
@@ -390,16 +402,16 @@ fi
 ## There should be one case statement for each item in $exec_methods
 case "${AUTO_EXEC}" in
     singularity)
-        CMD="";MNT="";ARG="";ARG+=" -t";ARG+=" ${THREADS}";MNT+=" -B ";MNT+="${REFERENCE_DIR}:/data2";ARG+=" /data2/${REFERENCE_BASE}/${BWT_PREFIX}";MNT+=" -B ";MNT+="${INPUT_DIR}:/data3";ARG+=" /data3/${INPUT_BASE}";if [ -n "${PAIR}" ]; then MNT+=" -B ";MNT+="${PAIR_DIR}:/data4";ARG+=" /data4/${PAIR_BASE}";fi;CMD0="singularity run ${MNT} ${SCRIPT_DIR}/bwa-0.7.17-biocontainers.simg bwa mem ${ARG}";CMD0+=" > ${OUTPUT_DIR}/${OUTPUT_BASE}";CMD0+=" 2> log.stderr";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
+        MNT=""; ARG=""; ARG="${ARG} -t"; ARG="${ARG} \"${THREADS}\""; MNT="${MNT} -B "; MNT="${MNT}\"${REFERENCE_DIR}:/data2\""; ARG="${ARG} \"/data2/${REFERENCE_BASE}/${BWT_PREFIX}\""; MNT="${MNT} -B "; MNT="${MNT}\"${INPUT_DIR}:/data3\""; ARG="${ARG} \"/data3/${INPUT_BASE}\""; if [ -n "${PAIR}" ]; then MNT="${MNT} -B "; MNT="${MNT}\"${PAIR_DIR}:/data4\""; ARG="${ARG} \"/data4/${PAIR_BASE}\""; fi; CMD0="singularity run ${MNT} ${SCRIPT_DIR}/bwa-0.7.17-biocontainers.simg bwa mem ${ARG}"; CMD0="${CMD0} >\"${OUTPUT_DIR}/${OUTPUT_BASE}\""; CMD0="${CMD0} 2>\"log.stderr\""; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
         ;;
     cdc-shared-singularity)
-        CMD="";MNT="";ARG="";ARG+=" -t";ARG+=" ${THREADS}";MNT+=" -B ";MNT+="${REFERENCE_DIR}:/data2";ARG+=" /data2/${REFERENCE_BASE}/${BWT_PREFIX}";MNT+=" -B ";MNT+="${INPUT_DIR}:/data3";ARG+=" /data3/${INPUT_BASE}";if [ -n "${PAIR}" ]; then MNT+=" -B ";MNT+="${PAIR_DIR}:/data4";ARG+=" /data4/${PAIR_BASE}";fi;CMD0="singularity run ${MNT} /apps/standalone/singularity/bwa/bwa-0.7.17-biocontainers.simg bwa mem ${ARG}";CMD0+=" > ${OUTPUT_DIR}/${OUTPUT_BASE}";CMD0+=" 2> log.stderr";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
+        MNT=""; ARG=""; ARG="${ARG} -t"; ARG="${ARG} \"${THREADS}\""; MNT="${MNT} -B "; MNT="${MNT}\"${REFERENCE_DIR}:/data2\""; ARG="${ARG} \"/data2/${REFERENCE_BASE}/${BWT_PREFIX}\""; MNT="${MNT} -B "; MNT="${MNT}\"${INPUT_DIR}:/data3\""; ARG="${ARG} \"/data3/${INPUT_BASE}\""; if [ -n "${PAIR}" ]; then MNT="${MNT} -B "; MNT="${MNT}\"${PAIR_DIR}:/data4\""; ARG="${ARG} \"/data4/${PAIR_BASE}\""; fi; CMD0="singularity run ${MNT} /apps/standalone/singularity/bwa/bwa-0.7.17-biocontainers.simg bwa mem ${ARG}"; CMD0="${CMD0} >\"${OUTPUT_DIR}/${OUTPUT_BASE}\""; CMD0="${CMD0} 2>\"log.stderr\""; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
         ;;
     docker)
-        CMD="";MNT="";ARG="";ARG+=" -t";ARG+=" ${THREADS}";MNT+=" -v ";MNT+="${REFERENCE_DIR}:/data2";ARG+=" /data2/${REFERENCE_BASE}/${BWT_PREFIX}";MNT+=" -v ";MNT+="${INPUT_DIR}:/data3";ARG+=" /data3/${INPUT_BASE}";if [ -n "${PAIR}" ]; then MNT+=" -v ";MNT+="${PAIR_DIR}:/data4";ARG+=" /data4/${PAIR_BASE}";fi;CMD0="docker run --rm ${MNT} quay.io/biocontainers/bwa:0.7.17--pl5.22.0_2 bwa mem ${ARG}";CMD0+=" > ${OUTPUT_DIR}/${OUTPUT_BASE}";CMD0+=" 2> log.stderr";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
+        MNT=""; ARG=""; ARG="${ARG} -t"; ARG="${ARG} \"${THREADS}\""; MNT="${MNT} -v "; MNT="${MNT}\"${REFERENCE_DIR}:/data2\""; ARG="${ARG} \"/data2/${REFERENCE_BASE}/${BWT_PREFIX}\""; MNT="${MNT} -v "; MNT="${MNT}\"${INPUT_DIR}:/data3\""; ARG="${ARG} \"/data3/${INPUT_BASE}\""; if [ -n "${PAIR}" ]; then MNT="${MNT} -v "; MNT="${MNT}\"${PAIR_DIR}:/data4\""; ARG="${ARG} \"/data4/${PAIR_BASE}\""; fi; CMD0="docker run --rm ${MNT} quay.io/biocontainers/bwa:0.7.17--pl5.22.0_2 bwa mem ${ARG}"; CMD0="${CMD0} >\"${OUTPUT_DIR}/${OUTPUT_BASE}\""; CMD0="${CMD0} 2>\"log.stderr\""; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
         ;;
     environment)
-        CMD="";MNT="";ARG="";ARG+=" -t";ARG+=" ${THREADS}";ARG+=" ${REFERENCE_FULL}/${BWT_PREFIX}";ARG+=" ${INPUT_FULL}";if [ -n "${PAIR}" ]; then ARG+=" ${PAIR_FULL}";fi;CMD0="bwa mem ${ARG}";CMD0+=" > ${OUTPUT_DIR}/${OUTPUT_BASE}";CMD0+=" 2> log.stderr";CMD+="${CMD0}";echo "CMD=${CMD}";safeRunCommand "${CMD}"
+        MNT=""; ARG=""; ARG="${ARG} -t"; ARG="${ARG} \"${THREADS}\""; ARG="${ARG} \"${REFERENCE_FULL}/${BWT_PREFIX}\""; ARG="${ARG} \"${INPUT_FULL}\""; if [ -n "${PAIR}" ]; then ARG="${ARG} \"${PAIR_FULL}\""; fi; CMD0="bwa mem ${ARG}"; CMD0="${CMD0} >\"${OUTPUT_DIR}/${OUTPUT_BASE}\""; CMD0="${CMD0} 2>\"log.stderr\""; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
         ;;
 esac
 ## ***************************************************************** <<< MODIFY
