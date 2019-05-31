@@ -121,9 +121,9 @@ pre_exec:
 exec_methods:
 - name: environment
   if:
-  - in_path: 'echo'
+  - in_path: 'cat'
   exec:
-  - run: echo 'output'
+  - run: cat ${FILE_FULL}
     stdout: ${OUTPUT_FULL}
 
 # List of optional commands executed after any method-specific execution
