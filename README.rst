@@ -8,7 +8,7 @@ This is a GeneFlow app template.
 Inputs
 ------
 
-1. input: List all app inputs and their descriptions.
+1. file: List all app inputs and their descriptions.
 
 Parameters
 ----------
