@@ -5,18 +5,17 @@
 ##### Metadata #####
 ###############################################################################
 
-# App metadata contains name, description, and source; populates the GeneFlow
-# definition
+# Basic app information
 
 # name: standard GeneFlow app name
-name: bwa-mem-0.7.17-gf
+name: name-of-app-gf
 # description: short description for the app
-description: BWA Mem
+description: Description of app
 # repo_uri: link to the app's git repo
 repo_uri: 'https://gitlab.com/geneflow/apps/app-template.git'
 # version: must be incremented every time this file, or any file in the app 
 # project is modified
-version: '0.4'
+version: '0.1'
 
 
 
@@ -76,49 +75,20 @@ version: '0.4'
 #    See the section "Execution Blocks" for information about the required
 #    format for execution blocks.
 inputs:
-  input:
-    label: Sequence FASTQ File
-    description: Sequence FASTQ file
+  file:
+    label: Input File
+    description: Input file
     type: File
     required: true
-    test_value: ${SCRIPT_DIR}/data/reads/polio-sample_R1.fastq
-
-  pair:
-    label: Paired-End Sequence FASTQ File
-    description: Paired-end sequence FASTQ file
-    type: File
-    required: false
-    test_value: ${SCRIPT_DIR}/data/reads/polio-sample_R2.fastq
-
-  reference:
-    label: Reference Index
-    description: Reference index directory
-    type: Directory
-    required: true
-    test_value: ${SCRIPT_DIR}/data/index
-    post_exec:
-    # make sure directory contains a valid BWA index
-    - run: "BWT_FILE=$(ls ${REFERENCE_FULL} | grep '.bwt$')"
-    - if:
-      - not_defined: "${BWT_FILE}"
-      run: "fail 'Invalid BWA reference index'"
-    - run: 'BWT_PREFIX=\"${BWT_FILE%.*}\"'
+    test_value: ${SCRIPT_DIR}/data/file.txt
 
 parameters:
-  threads:
-    label: CPU Threads
-    description: Number of CPU threads used for alignment
-    type: int
-    default: 2
-    required: false
-    test_value: 2
-
   output: 
-    label: Output SAM File
-    description: Output SAM file
+    label: Output File
+    description: Output file
     type: File
     required: true
-    test_value: output.sam
+    test_value: output.txt
 
 
 
@@ -149,84 +119,12 @@ pre_exec:
 # 3. exec: A list of exeuction blocks to be executed for the execution method.
 #    See the section "Execution Blocks" for more information. 
 exec_methods:
-- name: singularity
-  if:
-  - all:
-    - str_equal: ['${SINGULARITY}', 'yes']
-    - file_exist: '${SCRIPT_DIR}/bwa-0.7.17-biocontainers.simg'
-  exec:
-  - type: 'singularity'
-    image: '${SCRIPT_DIR}/bwa-0.7.17-biocontainers.simg'
-    run: 'bwa mem'
-    args:
-    - flag: '-t'
-      value: '${THREADS}'
-    - mount: '${REFERENCE}'
-      value: '${REFERENCE_BASE}/${BWT_PREFIX}'
-    - mount: '${INPUT}'
-    - if:
-      - defined: '${PAIR}'
-      mount: '${PAIR}'
-    stdout: '${OUTPUT_DIR}/${OUTPUT_BASE}'
-    stderr: 'log.stderr'
-
-- name: cdc-shared-singularity
-  if:
-  - all:
-    - str_equal: ['${SINGULARITY}', 'yes']
-    - file_exist: >-
-        /apps/standalone/singularity/bwa/bwa-0.7.17-biocontainers.simg
-  exec:
-  - type: 'singularity'
-    image: '/apps/standalone/singularity/bwa/bwa-0.7.17-biocontainers.simg'
-    run: 'bwa mem'
-    args:
-    - flag: '-t'
-      value: '${THREADS}'
-    - mount: '${REFERENCE}'
-      value: '${REFERENCE_BASE}/${BWT_PREFIX}'
-    - mount: '${INPUT}'
-    - if:
-      - defined: '${PAIR}'
-      mount: '${PAIR}'
-    stdout: '${OUTPUT_DIR}/${OUTPUT_BASE}'
-    stderr: 'log.stderr'
-
-- name: docker
-  if:
-  - str_equal: ['${DOCKER}', 'yes']
-  exec:
-  - type: 'docker'
-    image: 'quay.io/biocontainers/bwa:0.7.17--pl5.22.0_2'
-    run: 'bwa mem'
-    args:
-    - flag: '-t'
-      value: '${THREADS}'
-    - mount: '${REFERENCE}'
-      value: '${REFERENCE_BASE}/${BWT_PREFIX}'
-    - mount: '${INPUT}'
-    - if:
-      - defined: '${PAIR}'
-      mount: '${PAIR}'
-    stdout: '${OUTPUT_DIR}/${OUTPUT_BASE}'
-    stderr: 'log.stderr'
-
 - name: environment
   if:
-  - in_path: 'bwa'
+  - in_path: 'echo'
   exec:
-  - type: 'shell'
-    run: 'bwa mem'
-    args:
-    - flag: '-t'
-      value: '${THREADS}'
-    - value: '${REFERENCE_FULL}/${BWT_PREFIX}'
-    - value: '${INPUT_FULL}'
-    - if:
-      - defined: '${PAIR}'
-      value: '${PAIR_FULL}'
-    stdout: '${OUTPUT_DIR}/${OUTPUT_BASE}'
-    stderr: 'log.stderr'
+  - run: echo 'output'
+    stdout: ${OUTPUT_FULL}
 
 # List of optional commands executed after any method-specific execution
 # commands. These are environment cleanup commands. Each post_exec item
@@ -274,43 +172,17 @@ post_exec:
 # the app package must include a "Makefile" with build instructions.
 
 # Default asset to install if none is specified.
-default_asset: singularity
+default_asset: none
 
 assets:
-  package:
-  - type: copy
-    zip: bwa
-    src: package/bwa-0.7.17
-    dst: assets/bwa
+  none: []
 
-  singularity:
-  - type: copy
-    src: singularity/bwa/bwa-0.7.17-biocontainers.simg
-    dst: assets
-
-  build_package:
-  - type: build
-    repo: git@git.biotech.cdc.gov:containers/bwa-0.7.17-package
-    tag: master
-    folder: bwa-0.7.17-package
-    zip: bwa
-    src: build/bwa-0.7.17-package/install
-    dst: assets/bwa
-
-  build_singularity:
-  - type: build
-    repo: git@git.biotech.cdc.gov:containers/bwa-0.7.17-biocontainers
-    tag: master
-    folder: bwa-0.7.17-biocontainers
-    src: build/bwa-0.7.17-biocontainers/build/bwa-0.7.17-biocontainers.simg
-    dst: assets
 
 
 ###############################################################################
 ##### Additional Documentation #####
 ###############################################################################
-#
-#
+
 ### Execution Blocks ###
 #
 # Execution blocks occur in input/parameter post processing sections (i.e.,
@@ -382,8 +254,8 @@ assets:
 #       basename of the input/parameter.
 #    *Any additional bash/shell variables defined in the "post" section of each
 #    input/parameter, or defined in the "pre_exec" section are also available.
-#
-#
+
+  
 ### Conditional Blocks ###
 #
 # Nestable condition blocks. Test conditions can be grouped with the following
@@ -426,4 +298,3 @@ assets:
 # - all:
 #   - defined: '${VALUE}'
 #   - str_equal: ['${VALUE}', 'val']
-#
