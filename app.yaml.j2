@@ -1,0 +1,27 @@
+%YAML 1.1
+---
+gfVersion: v1.0
+class: app
+
+name: hello-world-gf
+description: Simple hello world GeneFlow app
+repo_uri: https://github.com/jhphan/hello-world-gf.git
+version: '0.1'
+inputs:
+  file:
+    label: Dummy Input File
+    description: Dummy input file
+    type: File
+parameters:
+  output:
+    label: Output Text File
+    description: Output text file
+    type: File
+definition:
+{% if agave %}
+  agave:
+    agave_app_id: {{ agave.appsPrefix }}-hello-world-gf-0.1{{ revision }}
+{% endif %}
+  local:
+    script: hello-world-gf.sh
+...

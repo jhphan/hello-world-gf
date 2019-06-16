@@ -8,11 +8,11 @@
 # Basic app information
 
 # name: standard GeneFlow app name
-name: name-of-app-gf
+name: hello-world-gf
 # description: short description for the app
-description: Description of app
+description: Simple hello world GeneFlow app
 # repo_uri: link to the app's git repo
-repo_uri: 'https://gitlab.com/geneflow/apps/app-template.git'
+repo_uri: 'https://github.com/jhphan/hello-world-gf.git'
 # version: must be incremented every time this file, or any file in the app 
 # project is modified
 version: '0.1'
@@ -76,16 +76,15 @@ version: '0.1'
 #    format for execution blocks.
 inputs:
   file:
-    label: Input File
-    description: Input file
+    label: Dummy Input File
+    description: Dummy input file
     type: File
-    required: true
-    test_value: ${SCRIPT_DIR}/data/file.txt
+    required: false
 
 parameters:
   output: 
-    label: Output File
-    description: Output file
+    label: Output Text File
+    description: Output text file
     type: File
     required: true
     test_value: output.txt
@@ -121,10 +120,10 @@ pre_exec:
 exec_methods:
 - name: environment
   if:
-  - in_path: 'cat'
+  - in_path: 'echo'
   exec:
-  - run: cat ${FILE_FULL}
-    stdout: ${OUTPUT_FULL}
+      - run: echo 'Hello World!'
+        stdout: ${OUTPUT_FULL}
 
 # List of optional commands executed after any method-specific execution
 # commands. These are environment cleanup commands. Each post_exec item

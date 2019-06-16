@@ -1,17 +1,17 @@
-GeneFlow App Template
-=====================
+Hello World! Basic GeneFlow App
+===============================
 
 Version: 0.1
 
-This is a GeneFlow app template.
+This is a basic GeneFlow app.
 
 Inputs
 ------
 
-1. file: List all app inputs and their descriptions.
+1. file: Dummy input file, use any small file.
 
 Parameters
 ----------
 
-1. output: List all app parameters and their descriptions.
+1. output: Output text file where "Hello World!" will be printed.
 
