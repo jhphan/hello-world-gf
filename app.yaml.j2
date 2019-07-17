@@ -4,13 +4,13 @@ gfVersion: v1.0
 class: app
 
 name: hello-world-gf
-description: Simple hello world GeneFlow app
+description: Updated hello world GeneFlow app
 repo_uri: https://github.com/jhphan/hello-world-gf.git
-version: '0.1'
+version: '0.2'
 inputs:
   file:
-    label: Dummy Input File
-    description: Dummy input file
+    label: Input Text File
+    description: Input text file
     type: File
 parameters:
   output:
@@ -20,7 +20,7 @@ parameters:
 definition:
 {% if agave %}
   agave:
-    agave_app_id: {{ agave.appsPrefix }}-hello-world-gf-0.1{{ revision }}
+    agave_app_id: {{ agave.appsPrefix }}-hello-world-gf-0.2{{ revision }}
 {% endif %}
   local:
     script: hello-world-gf.sh

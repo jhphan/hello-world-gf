@@ -1,17 +1,17 @@
-Hello World! Basic GeneFlow App
-===============================
+Hello World! Updated GeneFlow App
+=================================
 
-Version: 0.1
+Version: 0.2
 
-This is a basic GeneFlow app.
+This is a basic GeneFlow app with an input.
 
 Inputs
 ------
 
-1. file: Dummy input file, use any small file.
+1. file: Input text file.
 
 Parameters
 ----------
 
-1. output: Output text file where "Hello World!" will be printed.
+1. output: Output text file where "Hello World File Contents!" will be printed.
 

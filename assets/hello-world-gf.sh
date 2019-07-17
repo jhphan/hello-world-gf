@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Simple hello world GeneFlow app wrapper script
+# Updated hello world GeneFlow app wrapper script
 
 
 ###############################################################################
@@ -11,7 +11,7 @@
 ## Usage description should match command line arguments defined below
 usage () {
     echo "Usage: $(basename "$0")"
-    echo "  --file => Dummy Input File"
+    echo "  --file => Input Text File"
     echo "  --output => Output Text File"
     echo "  --exec_method => Execution method (environment, auto)"
     echo "  --help => Display this help message"
@@ -179,25 +179,28 @@ echo "Execution Method: ${EXEC_METHOD}"
 
 # FILE input
 
-if [ -n "${FILE}" ]; then
-    # make sure ${FILE} is staged
-    count=0
-    while [ ! -f ${FILE} ]
-    do
-        echo "${FILE} not staged, waiting..."
-        sleep 1
-        count=$((count+1))
-        if [ $count == 10 ]; then break; fi
-    done
-    if [ ! -f ${FILE} ]; then
-        echo "Dummy Input File not found: ${FILE}"
-        exit 1
-    fi
-    FILE_FULL=$(readlink -f "${FILE}")
-    FILE_DIR=$(dirname "${FILE_FULL}")
-    FILE_BASE=$(basename "${FILE_FULL}")
+if [ -z "${FILE}" ]; then
+    echo "Input Text File required"
+    echo
+    usage
+    exit 1
 fi
-
+# make sure FILE is staged
+count=0
+while [ ! -f ${FILE} ]
+do
+    echo "${FILE} not staged, waiting..."
+    sleep 1
+    count=$((count+1))
+    if [ $count == 10 ]; then break; fi
+done
+if [ ! -f ${FILE} ]; then
+    echo "Input Text File not found: ${FILE}"
+    exit 1
+fi
+FILE_FULL=$(readlink -f "${FILE}")
+FILE_DIR=$(dirname "${FILE_FULL}")
+FILE_BASE=$(basename "${FILE_FULL}")
 
 
 
@@ -304,7 +307,7 @@ fi
 ## There should be one case statement for each item in $exec_methods
 case "${AUTO_EXEC}" in
     environment)
-        MNT=""; ARG=""; CMD0="echo 'Hello World!' ${ARG}"; CMD0="${CMD0} >\"${OUTPUT_FULL}\""; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
+        MNT=""; ARG=""; CMD0="cat ${FILE_FULL} ${ARG}"; CMD0="${CMD0} >\"${OUTPUT_FULL}\""; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
         ;;
 esac
 ## ***************************************************************** <<< MODIFY

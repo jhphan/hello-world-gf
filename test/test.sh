@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Simple hello world GeneFlow app test script
+# Updated hello world GeneFlow app test script
 
 
 ###############################################################################
@@ -107,6 +107,7 @@ done
 ###############################################################################
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 CMD="${SCRIPT_DIR}/../assets/hello-world-gf.sh"
+    CMD="${CMD} --file=\"${SCRIPT_DIR}/data/file.txt\""
     CMD="${CMD} --output=\"output.txt\""
     CMD="${CMD} --exec_method=\"${EXEC_METHOD}\""
 echo "CMD=${CMD}"

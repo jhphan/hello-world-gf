@@ -1,7 +1,7 @@
 {
   "name": "{{ agave.appsPrefix }}-hello-world-gf",
-  "version": "0.1",
-  "label": "Simple hello world GeneFlow app",
+  "version": "0.2",
+  "label": "Updated hello world GeneFlow app",
   "defaultNodeCount": 1,
   "defaultMemoryPerNode": 1,
   "defaultProcessorsPerNode": 1,
@@ -9,14 +9,14 @@
   "parallelism": "SERIAL",
   "checkpointable": false,
   "executionSystem": "{{ agave.executionSystem }}",
-  "deploymentPath": "{{ agave.appsDir }}/hello-world-gf-0.1",
+  "deploymentPath": "{{ agave.appsDir }}/hello-world-gf-0.2",
   "deploymentSystem": "{{ agave.deploymentSystem }}",
   "templatePath": "hello-world-gf.sh",
   "testPath": "test/test.sh",
   "inputs": [
     { "id": "file",
       "value": {
-        "required": false,
+        "required": true,
         "default": ""
       }
     }
