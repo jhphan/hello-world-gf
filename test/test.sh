@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Updated hello world GeneFlow app test script
+# Updated hello world GeneFlow app demonstrating pipes test script
 
 
 ###############################################################################

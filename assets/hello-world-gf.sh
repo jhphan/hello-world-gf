@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Updated hello world GeneFlow app wrapper script
+# Updated hello world GeneFlow app demonstrating pipes wrapper script
 
 
 ###############################################################################
@@ -187,14 +187,14 @@ if [ -z "${FILE}" ]; then
 fi
 # make sure FILE is staged
 count=0
-while [ ! -f ${FILE} ]
+while [ ! -f "${FILE}" ]
 do
     echo "${FILE} not staged, waiting..."
     sleep 1
     count=$((count+1))
     if [ $count == 10 ]; then break; fi
 done
-if [ ! -f ${FILE} ]; then
+if [ ! -f "${FILE}" ]; then
     echo "Input Text File not found: ${FILE}"
     exit 1
 fi
@@ -274,7 +274,7 @@ if [ "${EXEC_METHOD}" = "auto" ]; then
     fi
 
     # detect execution method
-    if command -v echo >/dev/null 2>&1; then
+    if command -v cat >/dev/null 2>&1 && command -v wc >/dev/null 2>&1; then
         AUTO_EXEC=environment
     else
         echo "Valid execution method not detected"
@@ -307,7 +307,7 @@ fi
 ## There should be one case statement for each item in $exec_methods
 case "${AUTO_EXEC}" in
     environment)
-        MNT=""; ARG=""; CMD0="cat ${FILE_FULL} ${ARG}"; CMD0="${CMD0} >\"${OUTPUT_FULL}\""; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
+        CMD=""; MNT=""; ARG=""; CMD1="cat ${FILE_FULL} ${ARG}"; CMD="${CMD}${CMD1}"; MNT=""; ARG=""; CMD2="wc -w ${ARG}"; CMD2="${CMD2} >\"${OUTPUT_FULL}\""; CMD="${CMD}|${CMD2}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
         ;;
 esac
 ## ***************************************************************** <<< MODIFY

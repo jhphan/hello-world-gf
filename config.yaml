@@ -10,12 +10,12 @@
 # name: standard GeneFlow app name
 name: hello-world-gf
 # description: short description for the app
-description: Updated hello world GeneFlow app
+description: Updated hello world GeneFlow app demonstrating pipes
 # repo_uri: link to the app's git repo
 repo_uri: https://github.com/jhphan/hello-world-gf.git
 # version: must be incremented every time this file, or any file in the app
 # project is modified
-version: '0.2'
+version: '0.3'
 
 
 
@@ -121,10 +121,13 @@ pre_exec:
 exec_methods:
 - name: environment
   if:
-  - in_path: 'echo'
+  - in_path: 'cat'
+  - in_path: 'wc'
   exec:
-  - run: cat ${FILE_FULL}
-    stdout: ${OUTPUT_FULL}
+  - pipe:
+    - run: cat ${FILE_FULL}
+    - run: wc -w
+      stdout: ${OUTPUT_FULL}
 
 # List of optional commands executed after any method-specific execution
 # commands. These are environment cleanup commands. Each post_exec item

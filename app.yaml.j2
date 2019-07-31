@@ -4,9 +4,9 @@ gfVersion: v1.0
 class: app
 
 name: hello-world-gf
-description: Updated hello world GeneFlow app
+description: Updated hello world GeneFlow app demonstrating pipes
 repo_uri: https://github.com/jhphan/hello-world-gf.git
-version: '0.2'
+version: '0.3'
 inputs:
   file:
     label: Input Text File
@@ -20,7 +20,7 @@ parameters:
 definition:
 {% if agave %}
   agave:
-    agave_app_id: {{ agave.appsPrefix }}-hello-world-gf-0.2{{ revision }}
+    agave_app_id: {{ agave.appsPrefix }}-hello-world-gf-0.3{{ revision }}
 {% endif %}
   local:
     script: hello-world-gf.sh

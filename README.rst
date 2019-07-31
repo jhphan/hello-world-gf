@@ -1,9 +1,9 @@
 Hello World! Updated GeneFlow App
 =================================
 
-Version: 0.2
+Version: 0.3
 
-This is a basic GeneFlow app with an input.
+This is a basic GeneFlow app with an input demonstrating pipes.
 
 Inputs
 ------
@@ -13,5 +13,5 @@ Inputs
 Parameters
 ----------
 
-1. output: Output text file where "Hello World File Contents!" will be printed.
+1. output: Output text file where the number of words in the input text file will be printed.
 
