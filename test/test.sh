@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Updated hello world GeneFlow app demonstrating pipes test script
+# Updated hello world GeneFlow app demonstrating conditional execution test script
 
 
 ###############################################################################
@@ -108,6 +108,7 @@ done
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 CMD="${SCRIPT_DIR}/../assets/hello-world-gf.sh"
     CMD="${CMD} --file=\"${SCRIPT_DIR}/data/file.txt\""
+    CMD="${CMD} --mode=\"basic\""
     CMD="${CMD} --output=\"output.txt\""
     CMD="${CMD} --exec_method=\"${EXEC_METHOD}\""
 echo "CMD=${CMD}"

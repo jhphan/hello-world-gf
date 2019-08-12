@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Updated hello world GeneFlow app demonstrating pipes wrapper script
+# Updated hello world GeneFlow app demonstrating conditional execution wrapper script
 
 
 ###############################################################################
@@ -12,6 +12,7 @@
 usage () {
     echo "Usage: $(basename "$0")"
     echo "  --file => Input Text File"
+    echo "  --mode => Mode"
     echo "  --output => Output Text File"
     echo "  --exec_method => Execution method (environment, auto)"
     echo "  --help => Display this help message"
@@ -88,7 +89,7 @@ fi
 ## MODIFY >>> *****************************************************************
 ## Command line options should match usage description
 OPTIONS=
-LONGOPTIONS=help,exec_method:,file:,output:,
+LONGOPTIONS=help,exec_method:,file:,mode:,output:,
 ## ***************************************************************** <<< MODIFY
 
 # -temporarily store output to be able to check for errors
@@ -109,6 +110,7 @@ eval set -- "$PARSED"
 
 ## MODIFY >>> *****************************************************************
 ## Set any defaults for command line options
+MODE="basic"
 EXEC_METHOD="auto"
 ## ***************************************************************** <<< MODIFY
 
@@ -129,6 +131,14 @@ while true; do
                 FILE=$2
             else
                 FILE=${file}
+            fi
+            shift 2
+            ;;
+        --mode)
+            if [ -z "${mode}" ]; then
+                MODE=$2
+            else
+                MODE=${mode}
             fi
             shift 2
             ;;
@@ -164,6 +174,7 @@ done
 ## MODIFY >>> *****************************************************************
 ## Log any variables passed as inputs
 echo "File: ${FILE}"
+echo "Mode: ${MODE}"
 echo "Output: ${OUTPUT}"
 echo "Execution Method: ${EXEC_METHOD}"
 ## ***************************************************************** <<< MODIFY
@@ -202,6 +213,14 @@ FILE_FULL=$(readlink -f "${FILE}")
 FILE_DIR=$(dirname "${FILE_FULL}")
 FILE_BASE=$(basename "${FILE_FULL}")
 
+
+
+# MODE parameter
+if [ -n "${MODE}" ]; then
+    :
+else
+    :
+fi
 
 
 # OUTPUT parameter
@@ -274,7 +293,7 @@ if [ "${EXEC_METHOD}" = "auto" ]; then
     fi
 
     # detect execution method
-    if command -v cat >/dev/null 2>&1 && command -v wc >/dev/null 2>&1; then
+    if command -v cat >/dev/null 2>&1 && command -v wc >/dev/null 2>&1 && command -v echo >/dev/null 2>&1; then
         AUTO_EXEC=environment
     else
         echo "Valid execution method not detected"
@@ -307,7 +326,7 @@ fi
 ## There should be one case statement for each item in $exec_methods
 case "${AUTO_EXEC}" in
     environment)
-        CMD=""; MNT=""; ARG=""; CMD1="cat ${FILE_FULL} ${ARG}"; CMD="${CMD}${CMD1}"; MNT=""; ARG=""; CMD2="wc -w ${ARG}"; CMD2="${CMD2} >\"${OUTPUT_FULL}\""; CMD="${CMD}|${CMD2}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; 
+        if [ "${MODE}" = "basic" ]; then MNT=""; ARG=""; CMD0="echo 'Hello World!' ${ARG}"; CMD0="${CMD0} >\"${OUTPUT_FULL}\""; CMD="${CMD0}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; else CMD=""; MNT=""; ARG=""; CMD1="cat ${FILE_FULL} ${ARG}"; CMD="${CMD}${CMD1}"; MNT=""; ARG=""; CMD2="wc -w ${ARG}"; CMD2="${CMD2} >\"${OUTPUT_FULL}\""; CMD="${CMD}|${CMD2}"; echo "CMD=${CMD}"; safeRunCommand "${CMD}"; fi; 
         ;;
 esac
 ## ***************************************************************** <<< MODIFY

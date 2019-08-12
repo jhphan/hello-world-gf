@@ -4,15 +4,20 @@ gfVersion: v1.0
 class: app
 
 name: hello-world-gf
-description: Updated hello world GeneFlow app demonstrating pipes
+description: Updated hello world GeneFlow app demonstrating conditional execution
 repo_uri: https://github.com/jhphan/hello-world-gf.git
-version: '0.3'
+version: '0.4'
 inputs:
   file:
     label: Input Text File
     description: Input text file
     type: File
 parameters:
+  mode:
+    label: Mode
+    description: Execution mode
+    type: string
+    default: basic
   output:
     label: Output Text File
     description: Output text file
@@ -20,7 +25,7 @@ parameters:
 definition:
 {% if agave %}
   agave:
-    agave_app_id: {{ agave.appsPrefix }}-hello-world-gf-0.3{{ revision }}
+    agave_app_id: {{ agave.appsPrefix }}-hello-world-gf-0.4{{ revision }}
 {% endif %}
   local:
     script: hello-world-gf.sh
